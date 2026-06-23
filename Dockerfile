@@ -1,20 +1,19 @@
-# Use an official Node.js runtime
-FROM node:22
+# Build stage
+FROM node:22-alpine AS builder
 
-# Set working directory
 WORKDIR /app
 
-# Copy package files first
 COPY package*.json ./
+RUN npm ci
 
-# Install dependencies
-RUN npm install
-
-# Copy application source
 COPY . .
+RUN npm run build
 
-# Expose application port
-EXPOSE 3000
+# NGINX stage
+FROM nginx:alpine
 
-# Start the application
-CMD ["npm", "start"]
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]
